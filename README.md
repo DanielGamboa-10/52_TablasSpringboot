@@ -22,6 +22,9 @@ El proyecto implementa 52 tablas. Por requisito académico, cada tabla tiene su 
 | Java | 21 |
 | Maven Wrapper | Maven 3.9.16 |
 | Spring Boot | 4.0.2 |
+| Spring Security | 6.x |
+| JJWT | 0.12.6 |
+| SpringDoc OpenAPI | 2.3.0 |
 | Hibernate ORM | 7.2.1.Final |
 | Flyway | 11.14.1 |
 | MySQL Connector/J | 9.5.0 |
@@ -494,6 +497,40 @@ Abre la raíz correcta y ejecuta, en este orden:
 1. `Java: Clean Java Language Server Workspace`.
 2. `Maven: Reload Projects`.
 3. `Developer: Reload Window`, si los dos pasos anteriores no bastan.
+
+## Seguridad y Autenticación JWT + Swagger / OpenAPI
+
+El proyecto implementa un sistema de autenticación y autorización basado en tokens JWT y arquitectura hexagonal pura (`SecurityApp`), documentado interactivamente con **SpringDoc OpenAPI (Swagger UI)**.
+
+### Características del Sistema de Seguridad
+- **Tokens JWT**: Access Token (expiración configurable, por defecto 15 min) y Refresh Token persistido en base de datos (expiración por defecto 7 días, revocable en logout).
+- **Control de Acceso basado en Roles (RBAC)**: Roles `USER`, `ADMIN`, `MODERATOR`.
+- **Cifrado de Contraseñas**: BCrypt.
+- **Migración Flyway**: `V53__create_security_tables.sql` (tablas `users`, `roles`, `user_roles`, `refresh_tokens` con usuarios iniciales sembrados).
+- **Credenciales iniciales**:
+  - Administrador: `admin@mindconnect.com` / `password123`
+  - Usuario: `user@mindconnect.com` / `password123`
+
+### Endpoints de Autenticación (`/auth`)
+| Método | Endpoint | Acceso | Descripción |
+| --- | --- | --- | --- |
+| `POST` | `/auth/register` | Público | Registra nuevo usuario (asigna rol `USER` automáticamente) |
+| `POST` | `/auth/login` | Público | Autentica y retorna `accessToken` + `refreshToken` |
+| `POST` | `/auth/refresh` | Público | Renueva el `accessToken` usando un `refreshToken` válido |
+| `POST` | `/auth/logout` | Protegido | Revoca el `refreshToken` en la base de datos |
+| `GET` | `/auth/me` | Protegido | Retorna el perfil y roles del usuario autenticado |
+| `PUT` | `/auth/change-password` | Protegido | Permite cambiar la contraseña del usuario |
+| `PUT` | `/users/{userId}/roles` | Requiere `ADMIN` | Asigna un rol a un usuario |
+
+### Documentación Interactiva (Swagger UI)
+Con la aplicación en ejecución (`http://localhost:8081`):
+- **Swagger UI**: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+- **OpenAPI JSON**: [http://localhost:8081/v3/api-docs](http://localhost:8081/v3/api-docs)
+
+Para autorizar peticiones protegidas en Swagger UI:
+1. Iniciar sesión en `POST /auth/login` y copiar el `accessToken`.
+2. Presionar el botón **Authorize** 🔒 en Swagger UI.
+3. Pegar el token (sin la palabra `Bearer `) y hacer clic en **Authorize**.
 
 ## Alcance funcional
 
